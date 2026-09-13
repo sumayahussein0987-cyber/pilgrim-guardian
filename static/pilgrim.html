@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Pilgrim Guardian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B1220;
+    --panel: #141F35;
+    --panel-line: #253150;
+    --gold: #C99B3F;
+    --gold-soft: rgba(201, 155, 63, 0.14);
+    --red: #D8544A;
+    --red-soft: rgba(216, 84, 74, 0.14);
+    --green: #4E9E82;
+    --green-soft: rgba(78, 158, 130, 0.14);
+    --text: #EDE7DA;
+    --text-dim: #8B93A6;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    overscroll-behavior: none;
+  }
+
+  .screen {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 24px 40px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .brand span { color: var(--gold); }
+
+  .status-pill {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  .status-pill.safe { background: var(--green-soft); color: var(--green); }
+  .status-pill.alert { background: var(--red-soft); color: var(--red); }
+  .status-pill.loading { background: var(--panel); color: var(--text-dim); }
+
+  .compass-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+  }
+
+  .compass {
+    width: 240px;
+    height: 240px;
+    position: relative;
+  }
+
+  .compass-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1px solid var(--panel-line);
+    position: relative;
+  }
+
+  .compass-ring::before {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    border: 1px dashed var(--panel-line);
+  }
+
+  .compass-arrow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 92px;
+    margin-left: -3px;
+    margin-top: -92px;
+    transform-origin: bottom center;
+    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .compass-arrow .stem {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, var(--gold), transparent);
+    border-radius: 3px;
+  }
+
+  .compass-arrow .head {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 16px solid var(--gold);
+  }
+
+  .compass-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin: -5px;
+    border-radius: 50%;
+    background: var(--text);
+  }
+
+  .compass-caption {
+    margin-top: 24px;
+    font-size: 14px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .guidance-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 8px;
+  }
+
+  .guidance-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .guidance-text {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .safe-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .responder-note {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+</style>
+</head>
+<body>
+
+<div class="screen">
+  <div class="header">
+    <div class="brand">Pilgrim <span>Guardian</span></div>
+    <div class="status-pill loading" id="status-pill">Connecting…</div>
+  </div>
+
+  <div class="compass-wrap">
+    <div class="compass">
+      <div class="compass-ring">
+        <div class="compass-arrow" id="compass-arrow">
+          <div class="stem"></div>
+          <div class="head"></div>
+        </div>
+        <div class="compass-center"></div>
+      </div>
+    </div>
+    <div class="compass-caption" id="compass-caption">Finding your group…</div>
+  </div>
+
+  <div id="content-area">
+    <div class="guidance-card">
+      <div class="safe-text">Waiting for your first location check…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const statusPill = document.getElementById('status-pill');
+const compassArrow = document.getElementById('compass-arrow');
+const compassCaption = document.getElementById('compass-caption');
+const contentArea = document.getElementById('content-area');
+
+function bearingDegrees(lat1, lng1, lat2, lng2) {
+  const toRad = d => d * Math.PI / 180;
+  const y = Math.sin(toRad(lng2 - lng1)) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+            Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lng2 - lng1));
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  return (brng + 360) % 360;
+}
+
+async function poll() {
+  try {
+    const resp = await fetch('/pilgrim/status?device_id=' + encodeURIComponent('+99999991000'));
+    const data = await resp.json();
+    render(data);
+  } catch (e) {
+    statusPill.textContent = 'Offline';
+    statusPill.className = 'status-pill loading';
+  }
+  setTimeout(poll, 3000);
+}
+
+function render(data) {
+  const person = data.risk_result.location;
+  const group = data.group_center;
+  const bearing = bearingDegrees(person.latitude, person.longitude, group.lat, group.lng);
+  compassArrow.style.transform = `rotate(${bearing}deg)`;
+
+  if (data.status === 'safe') {
+    statusPill.textContent = "You're safe";
+    statusPill.className = 'status-pill safe';
+    compassCaption.textContent = "You're within your group's safe zone.";
+    contentArea.innerHTML = `
+      <div class="guidance-card">
+        <div class="safe-text">No action needed right now. Stay with your group, and this screen will alert you immediately if that changes.</div>
+      </div>`;
+  } else {
+    statusPill.textContent = 'Guidance active';
+    statusPill.className = 'status-pill alert';
+    const zoneName = data.target_zone && data.target_zone.name ? data.target_zone.name : 'your group';
+    compassCaption.textContent = `Follow the arrow toward ${zoneName}.`;
+    contentArea.innerHTML = `
+      <div class="guidance-card">
+        <div class="guidance-label">Guidance</div>
+        <div class="guidance-text">${data.guidance_message.replace(/\n/g, '<br>')}</div>
+        <div class="responder-note"><span class="dot"></span> A responder has been notified and is aware of your location.</div>
+      </div>`;
+  }
+}
+
+poll();
+</script>
+
+</body>
+</html>

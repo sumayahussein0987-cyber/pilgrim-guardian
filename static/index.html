@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pilgrim Guardian — Operations View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B1220;
+    --panel: #141F35;
+    --panel-line: #253150;
+    --gold: #C99B3F;
+    --gold-soft: rgba(201, 155, 63, 0.14);
+    --red: #D8544A;
+    --red-soft: rgba(216, 84, 74, 0.14);
+    --green: #4E9E82;
+    --green-soft: rgba(78, 158, 130, 0.14);
+    --text: #EDE7DA;
+    --text-dim: #8B93A6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--panel-line);
+  }
+
+  .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 19px;
+    letter-spacing: 0.01em;
+  }
+
+  .brand span { color: var(--gold); }
+
+  .mode-badge {
+    font-size: 12px;
+    color: var(--text-dim);
+    border: 1px solid var(--panel-line);
+    padding: 5px 12px;
+    border-radius: 3px;
+  }
+
+  .mode-badge b { color: var(--gold); font-weight: 600; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 1px;
+    background: var(--panel-line);
+    min-height: calc(100vh - 65px);
+  }
+
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .scene-panel, .feed-panel {
+    background: var(--bg);
+    padding: 40px;
+  }
+
+  .scene-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .scene-caption {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 28px;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  .scene-caption b { color: var(--text); font-weight: 500; }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  button {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 4px;
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  button:hover { border-color: var(--gold); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.primary {
+    background: var(--gold-soft);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .feed-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .feed-header {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .feed-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+  }
+
+  .risk-gauge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--panel-line);
+    min-height: 80px;
+  }
+
+  .risk-number {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(44px, 4vw, 56px);
+    font-weight: 700;
+    line-height: 1;
+    transition: color 0.3s ease;
+  }
+
+  .risk-label {
+    font-size: 14px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .status-chip {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .status-chip.safe { background: var(--green-soft); color: var(--green); }
+  .status-chip.alert { background: var(--red-soft); color: var(--red); }
+  .status-chip.idle { background: var(--panel); color: var(--text-dim); }
+
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 12px;
+    margin: 14px 0 16px;
+  }
+
+  .kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 6px;
+    padding: 10px 14px;
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .kpi-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-align: center;
+  }
+
+  .kpi-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(18px, 1.2vw, 22px);
+    line-height: 1.2;
+    margin-top: 8px;
+    color: var(--gold);
+    font-weight: 600;
+    text-align: center;
+    width: 100%;
+    white-space: normal;
+  }
+
+  .service-trace {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-top: 14px;
+  }
+
+  .service-trace-title {
+    font-size: 12px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .service-list {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .service-list .service-call {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--panel-line);
+  }
+
+  .service-list .service-call:last-child {
+    border-bottom: none;
+  }
+
+  .service-status {
+    color: var(--green);
+    font-size: 10px;
+    align-self: center;
+  }
+
+  .trace-line {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.55;
+    padding: 4px 0;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--panel-line);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .step.visible { opacity: 1; transform: translateY(0); }
+
+  .step-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    color: var(--gold);
+    width: 18px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+
+  .step-body { flex: 1; }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .step-detail {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  .step-detail .hl { color: var(--text); }
+
+  .guidance-box {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--gold-soft);
+    border-left: 2px solid var(--gold);
+    border-radius: 2px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .agent-reasoning {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--panel-line);
+    border-radius: 3px;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  .agent-reasoning-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .trace-line {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    word-break: break-word;
+  }
+
+  .trace-note {
+    font-style: italic;
+  }
+
+  .empty-state {
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 40px 0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Pilgrim <span>Guardian</span></div>
+  <div class="mode-badge">Mode: <b id="mode-label">—</b></div>
+</div>
+
+<div class="layout">
+
+  <div class="scene-panel">
+    <svg id="scene" viewBox="0 0 320 320" width="320" height="320">
+      <circle cx="160" cy="160" r="110" fill="none" stroke="var(--panel-line)" stroke-width="1.5"/>
+      <circle cx="160" cy="160" r="110" fill="none" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3 5" opacity="0.5"/>
+      <text x="160" y="42" text-anchor="middle" fill="var(--text-dim)" font-family="IBM Plex Sans" font-size="11">Group safe zone</text>
+
+      <g id="group-marker" transform="translate(160,160)">
+        <circle r="5" fill="var(--gold)"/>
+      </g>
+
+      <g id="pilgrim-marker" transform="translate(160,160)" style="transition: transform 1.1s cubic-bezier(0.4,0,0.2,1);">
+        <circle id="pilgrim-pulse" r="14" fill="var(--green)" opacity="0.18"/>
+        <circle id="pilgrim-dot" r="6" fill="var(--green)"/>
+      </g>
+    </svg>
+    <div class="scene-caption">
+      Live tracking of a single simulated pilgrim device relative to the group's safe zone. <b>Gold dot</b> is the group center — <b>colored dot</b> is the tracked device.
+    </div>
+    <div class="controls">
+      <button id="btn-safe">Reset to safe</button>
+      <button id="btn-drift" class="primary">Simulate drift</button>
+    </div>
+  </div>
+
+  <div class="feed-panel">
+    <div class="feed-header">Agent pipeline</div>
+    <div class="feed-sub">Tracking → Risk → Response → Guidance</div>
+
+    <div class="risk-gauge">
+      <div class="risk-number" id="risk-number" style="color: var(--text-dim);">—</div>
+      <div class="risk-label">risk score</div>
+      <div class="status-chip idle" id="status-chip">Idle</div>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">Connectivity</div>
+        <div class="kpi-value" id="kpi-connectivity">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Congestion</div>
+        <div class="kpi-value" id="kpi-congestion">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Responder</div>
+        <div class="kpi-value" id="kpi-responder">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Target</div>
+        <div class="kpi-value" id="kpi-zone">—</div>
+      </div>
+    </div>
+
+    <div class="service-trace">
+      <div class="service-trace-title">Service call trace</div>
+      <div class="service-list" id="service-list">
+        <div class="service-call"><span class="service-status">●</span><span>Awaiting scenario run</span></div>
+      </div>
+    </div>
+
+    <div class="steps" id="steps">
+      <div class="empty-state">Run a scenario to see the pipeline trace.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const btnSafe = document.getElementById('btn-safe');
+const btnDrift = document.getElementById('btn-drift');
+const stepsEl = document.getElementById('steps');
+const riskNumberEl = document.getElementById('risk-number');
+const statusChipEl = document.getElementById('status-chip');
+const pilgrimMarker = document.getElementById('pilgrim-marker');
+const pilgrimDot = document.getElementById('pilgrim-dot');
+const pilgrimPulse = document.getElementById('pilgrim-pulse');
+const modeLabel = document.getElementById('mode-label');
+const serviceList = document.getElementById('service-list');
+const kpiConnectivity = document.getElementById('kpi-connectivity');
+const kpiCongestion = document.getElementById('kpi-congestion');
+const kpiResponder = document.getElementById('kpi-responder');
+const kpiZone = document.getElementById('kpi-zone');
+
+fetch('/').then(r => r.json()).then(data => {
+  modeLabel.textContent = data.camara_mode.toUpperCase();
+});
+
+function setMarker(inside) {
+  const angle = Math.random() * Math.PI * 2;
+  const dist = inside ? 20 + Math.random() * 30 : 150 + Math.random() * 20;
+  const x = 160 + Math.cos(angle) * dist;
+  const y = 160 + Math.sin(angle) * dist;
+  const color = inside ? 'var(--green)' : 'var(--red)';
+  pilgrimMarker.setAttribute('transform', `translate(${x},${y})`);
+  pilgrimDot.setAttribute('fill', color);
+  pilgrimPulse.setAttribute('fill', color);
+}
+
+function addStep(num, title, detail, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'step';
+      div.innerHTML = `
+        <div class="step-num">${num}</div>
+        <div class="step-body">
+          <div class="step-title">${title}</div>
+          <div class="step-detail">${detail}</div>
+        </div>`;
+      stepsEl.appendChild(div);
+      requestAnimationFrame(() => div.classList.add('visible'));
+      resolve();
+    }, delay);
+  });
+}
+
+async function runScenario(simulateDrift) {
+  btnSafe.disabled = true;
+  btnDrift.disabled = true;
+  stepsEl.innerHTML = '';
+  riskNumberEl.textContent = '—';
+  riskNumberEl.style.color = 'var(--text-dim)';
+  statusChipEl.className = 'status-chip idle';
+  statusChipEl.textContent = 'Running…';
+
+  let data;
+  try {
+    const resp = await fetch('/demo/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id: '+99999991000',
+        responder_id: 'responder-001',
+        language: 'English',
+        simulate_drift: simulateDrift
+      })
+    });
+    data = await resp.json();
+  } catch (e) {
+    await addStep('!', 'Request failed', 'Could not reach the Pilgrim Guardian backend. Is uvicorn running?', 200);
+    btnSafe.disabled = false;
+    btnDrift.disabled = false;
+    return;
+  }
+
+  const trace = data.service_trace || [];
+  if (trace.length > 0) {
+    serviceList.innerHTML = trace.map(s => `<div class="service-call"><span class="service-status">●</span><span>${s.service}: ${s.status} — ${s.detail}</span></div>`).join('');
+  }
+
+  const r = data.risk_result;
+  setMarker(r.inside_safe_zone);
+  kpiConnectivity.textContent = r.connectivity || '—';
+  kpiCongestion.textContent = r.congestion || '—';
+  kpiResponder.textContent = data.response_alert?.responder_id || '—';
+  kpiZone.textContent = data.target_zone?.name || '—';
+
+  await addStep('1', 'Tracking Agent',
+    `Device is <span class="hl">${r.inside_safe_zone ? 'inside' : 'outside'}</span> the safe zone. Last seen ${new Date(r.last_location_time).toLocaleTimeString()}.`,
+    250);
+
+  await addStep('2', 'Risk Agent',
+    `Connectivity: <span class="hl">${r.connectivity}</span> · Congestion: <span class="hl">${r.congestion}</span> → risk score <span class="hl">${r.risk_score}</span>.`,
+    500);
+
+  riskNumberEl.textContent = r.risk_score;
+  riskNumberEl.style.color = r.high_risk ? 'var(--red)' : 'var(--green)';
+
+  if (data.status === 'no_action_needed') {
+    statusChipEl.className = 'status-chip safe';
+    statusChipEl.textContent = 'No action needed';
+    btnSafe.disabled = false;
+    btnDrift.disabled = false;
+    return;
+  }
+
+  statusChipEl.className = 'status-chip alert';
+  statusChipEl.textContent = 'Alert triggered';
+
+  await addStep('3', 'Response Agent',
+    `Responder <span class="hl">${data.response_alert.responder_id}</span> verified and notified. QoD session <span class="hl">${data.response_alert.qod_status}</span>.`,
+    650);
+
+  const traceHtml = (data.agent_trace || []).map(step => {
+    if (step.tool) {
+      return `<div class="trace-line">🔧 <span class="hl">${step.tool}</span>(${JSON.stringify(step.input)}) → ${JSON.stringify(step.result)}</div>`;
+    }
+    return `<div class="trace-line trace-note">${step.detail}</div>`;
+  }).join('');
+
+  const guidanceHtml = `Fraud check: <span class="hl">${data.fraud_check.swapped ? 'SIM swap flagged' : 'clean'}</span>.
+    <div class="agent-reasoning">
+      <div class="agent-reasoning-label">Agent reasoning (live tool calls)</div>
+      ${traceHtml || '<div class="trace-line trace-note">No tool calls recorded.</div>'}
+    </div>
+    <div class="guidance-box">${data.guidance_message.replace(/\n/g, '<br>')}</div>`;
+  await addStep('4', 'Guidance Agent', guidanceHtml, 850);
+
+  btnSafe.disabled = false;
+  btnDrift.disabled = false;
+}
+
+btnSafe.addEventListener('click', async () => {
+  await fetch('/demo/reset', { method: 'POST' });
+  runScenario(false);
+});
+
+btnDrift.addEventListener('click', () => runScenario(true));
+</script>
+
+</body>
+</html>
