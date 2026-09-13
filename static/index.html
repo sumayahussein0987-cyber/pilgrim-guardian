@@ -190,16 +190,17 @@
     background: var(--panel);
     border: 1px solid var(--panel-line);
     border-radius: 6px;
-    padding: 10px 14px;
+    padding: 10px 12px;
     min-height: 96px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
   }
 
   .kpi-label {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -208,14 +209,51 @@
 
   .kpi-value {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(18px, 1.2vw, 22px);
-    line-height: 1.2;
+    font-size: clamp(14px, 0.95vw, 18px);
+    line-height: 1.1;
     margin-top: 8px;
     color: var(--gold);
     font-weight: 600;
     text-align: center;
     width: 100%;
     white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .scenario-strip {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 14px 0 12px;
+  }
+
+  .scenario-strip button {
+    font-size: 11px;
+    padding: 9px 14px;
+  }
+
+  .route-panel {
+    background: rgba(201, 155, 63, 0.08);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 14px;
+  }
+
+  .route-panel-title {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .route-panel-body {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.55;
+    margin-top: 8px;
   }
 
   .service-trace {
@@ -390,6 +428,7 @@
     <div class="controls">
       <button id="btn-safe">Reset to safe</button>
       <button id="btn-drift" class="primary">Simulate drift</button>
+      <button id="btn-crowd">Crowded route</button>
     </div>
   </div>
 
@@ -422,6 +461,13 @@
       </div>
     </div>
 
+    <div class="route-panel">
+      <div class="route-panel-title">Route reasoning</div>
+      <div class="route-panel-body" id="route-reasoning">
+        Waiting for a scenario run.
+      </div>
+    </div>
+
     <div class="service-trace">
       <div class="service-trace-title">Service call trace</div>
       <div class="service-list" id="service-list">
@@ -439,6 +485,7 @@
 <script>
 const btnSafe = document.getElementById('btn-safe');
 const btnDrift = document.getElementById('btn-drift');
+const btnCrowd = document.getElementById('btn-crowd');
 const stepsEl = document.getElementById('steps');
 const riskNumberEl = document.getElementById('risk-number');
 const statusChipEl = document.getElementById('status-chip');
@@ -447,6 +494,7 @@ const pilgrimDot = document.getElementById('pilgrim-dot');
 const pilgrimPulse = document.getElementById('pilgrim-pulse');
 const modeLabel = document.getElementById('mode-label');
 const serviceList = document.getElementById('service-list');
+const routeReasoning = document.getElementById('route-reasoning');
 const kpiConnectivity = document.getElementById('kpi-connectivity');
 const kpiCongestion = document.getElementById('kpi-congestion');
 const kpiResponder = document.getElementById('kpi-responder');
@@ -454,6 +502,18 @@ const kpiZone = document.getElementById('kpi-zone');
 
 fetch('/').then(r => r.json()).then(data => {
   modeLabel.textContent = data.camara_mode.toUpperCase();
+});
+
+btnSafe.addEventListener('click', async () => {
+  await fetch('/demo/reset', { method: 'POST' });
+  runScenario(false);
+});
+
+btnDrift.addEventListener('click', () => runScenario(true));
+
+btnCrowd.addEventListener('click', () => {
+  routeReasoning.textContent = 'Crowded road detected. Choosing the least congested nearby assembly zone.';
+  runScenario(true);
 });
 
 function setMarker(inside) {
@@ -540,10 +600,15 @@ async function runScenario(simulateDrift) {
   if (data.status === 'no_action_needed') {
     statusChipEl.className = 'status-chip safe';
     statusChipEl.textContent = 'No action needed';
+    routeReasoning.textContent = 'No route needed. The pilgrim is inside the safe zone.';
     btnSafe.disabled = false;
     btnDrift.disabled = false;
     return;
   }
+
+  const selected = data.target_zone?.name || 'nearby assembly zone';
+  const level = r.congestion || 'unknown';
+  routeReasoning.textContent = `${selected} selected because it is the least congested nearby safe point. Congestion band: ${level}.`;
 
   statusChipEl.className = 'status-chip alert';
   statusChipEl.textContent = 'Alert triggered';
@@ -570,13 +635,6 @@ async function runScenario(simulateDrift) {
   btnSafe.disabled = false;
   btnDrift.disabled = false;
 }
-
-btnSafe.addEventListener('click', async () => {
-  await fetch('/demo/reset', { method: 'POST' });
-  runScenario(false);
-});
-
-btnDrift.addEventListener('click', () => runScenario(true));
 </script>
 
 </body>
