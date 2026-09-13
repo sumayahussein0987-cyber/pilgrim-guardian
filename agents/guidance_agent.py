@@ -6,12 +6,22 @@ the at-risk person back to their group.
 Job: calm, step-by-step directions in the person's own language, while
 fraud checks run quietly in the background.
 
-The project now prefers the built-in deterministic routing path so the
-hackathon demo remains free and reliable without requiring a paid AI key.
+generate_directions_agentic() is the "real" agentic version: rather than
+Python code deciding upfront which CAMARA signal to check and which zone
+to pick, Claude is given tools (check_sim_swap, get_nearby_zones) and
+decides for itself what to look up before answering. The tool-call trace
+it produces is returned alongside the final message so it can be shown
+on the dashboard as the agent's visible reasoning.
 """
 import json
 import camara_client as camara
 import config
+
+try:
+    from anthropic import Anthropic
+    _client = Anthropic(api_key=config.ANTHROPIC_API_KEY) if config.ANTHROPIC_API_KEY else None
+except ImportError:
+    _client = None
 
 
 TOOLS = [

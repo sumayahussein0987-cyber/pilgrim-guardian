@@ -9,6 +9,8 @@ NOKIA_RAPIDAPI_KEY = os.getenv("NOKIA_RAPIDAPI_KEY", "")
 NOKIA_RAPIDAPI_HOST = os.getenv("NOKIA_RAPIDAPI_HOST", "network-as-code.nokia.rapidapi.com")
 NOKIA_BASE_URL = os.getenv("NOKIA_BASE_URL", "https://network-as-code.p-eu.rapidapi.com")
 
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
 RISK_THRESHOLD = float(os.getenv("RISK_THRESHOLD", "70"))
 
 # Simulator device IDs provided by Nokia's sandbox docs — safe to use freely.
